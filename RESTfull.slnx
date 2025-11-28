@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="RESTfull.API/RESTfull.API.csproj" />
+  <Project Path="RESTfull.Client/RESTfull.Client.csproj" Id="34ab0fd6-4436-4825-92da-ad033d365b78" />
+  <Project Path="RESTfull.Domain/RESTfull.Domain.csproj" />
+  <Project Path="RESTfull.Infrastructure/RESTfull.Infrastructure.csproj" />
+</Solution>

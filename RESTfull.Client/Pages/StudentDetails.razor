@@ -1,0 +1,743 @@
+﻿@page "/student/{id:guid}"
+@using RESTfull.Domain.Entities
+@inject RESTfull.Client.Services.StudentService StudentService
+@inject RESTfull.Client.Services.EducationService EducationService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject HttpClient _http
+
+<h3>Персональная информация студента</h3>
+
+@if (_student == null)
+{
+    <div class="alert alert-info">
+        <p>Загрузка информации о студенте...</p>
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4>@_student.LastName @_student.FirstName @_student.Patronymic</h4>
+            <div>
+                <button class="btn btn-warning me-2" @onclick="ToggleEditForm">
+                    @(_showEditForm ? "Отмена" : "Редактировать студента")
+                </button>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <!-- Форма редактирования студента -->
+            @if (_showEditForm)
+            {
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5>Редактирование данных студента</h5>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-2">
+                                    <label class="form-label">Имя *</label>
+                                    <input @bind="@_editFirstName" class="form-control @(_firstNameError ? "is-invalid" : "")" />
+                                    @if (_firstNameError)
+                                    {
+                                        <div class="invalid-feedback">Имя обязательно для заполнения</div>
+                                    }
+                                </div>
+
+                                <div class="mb-2">
+                                    <label class="form-label">Фамилия *</label>
+                                    <input @bind="@_editLastName" class="form-control @(_lastNameError ? "is-invalid" : "")" />
+                                    @if (_lastNameError)
+                                    {
+                                        <div class="invalid-feedback">Фамилия обязательна для заполнения</div>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="mb-2">
+                                    <label class="form-label">Отчество</label>
+                                    <input @bind="@_editPatronymic" class="form-control" />
+                                </div>
+
+                                <div class="mb-2">
+                                    <label class="form-label">Номер студ. билета *</label>
+                                    <input @bind="@_editStudentCard" class="form-control @(_studentCardError ? "is-invalid" : "")" />
+                                    @if (_studentCardError)
+                                    {
+                                        <div class="invalid-feedback">Номер студенческого билета обязателен</div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-success" @onclick="UpdateStudent">Сохранить изменения</button>
+
+                        @if (!string.IsNullOrEmpty(_updateMessage))
+                        {
+                            <div class="alert @(_updateMessage.Contains("успешно") ? "alert-success" : "alert-danger") mt-2">
+                                @_updateMessage
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Форма добавления обучения -->
+            @if (_showEducationForm)
+            {
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5>Добавить информацию об обучении</h5>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-2">
+                                    <label class="form-label">Учебное заведение *</label>
+                                    <input @bind="@_newEducation.Institution" class="form-control" />
+                                </div>
+
+                                <div class="mb-2">
+                                    <label class="form-label">Факультет *</label>
+                                    <input @bind="@_newEducation.Faculty" class="form-control" />
+                                </div>
+
+                                <div class="mb-2">
+                                    <label class="form-label">Специальность *</label>
+                                    <input @bind="@_newEducation.Specialty" class="form-control" />
+                                </div>
+
+                                <div class="mb-2">
+                                    <label class="form-label">Профиль</label>
+                                    <input @bind="@_newEducation.Profile" class="form-control" />
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="mb-2">
+                                    <label class="form-label">Форма обучения *</label>
+                                    <select @bind="@_newEducation.Form" class="form-control">
+                                        <option value="Очная">Очная</option>
+                                        <option value="Заочная">Заочная</option>
+                                        <option value="Очно-заочная">Очно-заочная</option>
+                                        <option value="Дистанционная">Дистанционная</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-2">
+                                    <label class="form-label">Квалификация</label>
+                                    <input @bind="@_newEducation.Qualification" class="form-control" />
+                                </div>
+
+                                <div class="mb-2">
+                                    <label class="form-label">Группа *</label>
+                                    <input @bind="@_newEducation.Group" class="form-control" />
+                                </div>
+
+                                <!-- ДОБАВЬТЕ ЭТОТ БЛОК С ГОДАМИ -->
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="mb-2">
+                                            <label class="form-label">Год начала *</label>
+                                            <input type="number" @bind="@_newEducation.StartYear" class="form-control" />
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="mb-2">
+                                            <label class="form-label">Год окончания</label>
+                                            <input type="number" @bind="@_newEducation.EndYear" class="form-control" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-success" @onclick="AddEducation">Добавить обучение</button>
+                        <button class="btn btn-secondary ms-2" @onclick="ToggleEducationForm">Отмена</button>
+
+                        @if (!string.IsNullOrEmpty(_educationMessage))
+                        {
+                            <div class="alert @(_educationMessage.Contains("успешно") ? "alert-success" : "alert-danger") mt-2">
+                                @_educationMessage
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Форма редактирования образования -->
+            @if (_showEditEducationForm && _editingEducation != null)
+            {
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5>Редактирование информации об обучении</h5>
+                        <p class="text-muted">Редактирование: @_editingEducation.Institution</p>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-2">
+                                    <label class="form-label">Учебное заведение *</label>
+                                    <input @bind="@_editEducationModel.Institution" class="form-control" />
+                                </div>
+
+                                <div class="mb-2">
+                                    <label class="form-label">Факультет *</label>
+                                    <input @bind="@_editEducationModel.Faculty" class="form-control" />
+                                </div>
+
+                                <div class="mb-2">
+                                    <label class="form-label">Специальность *</label>
+                                    <input @bind="@_editEducationModel.Specialty" class="form-control" />
+                                </div>
+
+                                <div class="mb-2">
+                                    <label class="form-label">Профиль</label>
+                                    <input @bind="@_editEducationModel.Profile" class="form-control" />
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="mb-2">
+                                    <label class="form-label">Форма обучения *</label>
+                                    <select @bind="@_editEducationModel.Form" class="form-control">
+                                        <option value="Очная">Очная</option>
+                                        <option value="Заочная">Заочная</option>
+                                        <option value="Очно-заочная">Очно-заочная</option>
+                                        <option value="Дистанционная">Дистанционная</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-2">
+                                    <label class="form-label">Квалификация</label>
+                                    <input @bind="@_editEducationModel.Qualification" class="form-control" />
+                                </div>
+
+                                <div class="mb-2">
+                                    <label class="form-label">Группа *</label>
+                                    <input @bind="@_editEducationModel.Group" class="form-control" />
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="mb-2">
+                                            <label class="form-label">Год начала *</label>
+                                            <input type="number" @bind="@_editEducationModel.StartYear" class="form-control" />
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="mb-2">
+                                            <label class="form-label">Год окончания</label>
+                                            <input type="number" @bind="@_editEducationModel.EndYear" class="form-control" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-3">
+                            <button class="btn btn-success" @onclick="UpdateEducation">Сохранить изменения</button>
+                            <button class="btn btn-secondary ms-2" @onclick="CancelEditEducation">Отмена</button>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(_educationEditMessage))
+                        {
+                            <div class="alert @(_educationEditMessage.Contains("успешно") ? "alert-success" : "alert-danger") mt-2">
+                                @_educationEditMessage
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Основная информация студента -->
+            <div class="mb-4">
+                <h5>Основная информация</h5>
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <th style="width: 40%">ID студента:</th>
+                                        <td>@_student.Id</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Имя:</th>
+                                        <td>@_student.FirstName</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Фамилия:</th>
+                                        <td>@_student.LastName</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Отчество:</th>
+                                        <td>@(_student.Patronymic ?? "Не указано")</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <th style="width: 40%">Номер студ. билета:</th>
+                                        <td>@_student.StudentCardNumber</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Дата регистрации:</th>
+                                        <td>@_student.RegistrationDate.ToString("dd.MM.yyyy HH:mm")</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Образование -->
+            <div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">Образование</h5>
+                    
+                </div>
+
+                @if (_student.Educations?.Any() == true)
+                {
+                    <div class="row">
+                        @foreach (var education in _student.Educations)
+                        {
+                            <div class="col-12 mb-3">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0">@education.Institution</h6>
+                                        <span class="badge @GetStatusBadgeClass(education.Status)">
+                                            @education.Status
+                                        </span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <table class="table table-sm table-borderless">
+                                                    <tr>
+                                                        <th>Факультет:</th>
+                                                        <td>@education.Faculty</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Специальность:</th>
+                                                        <td>@education.Specialty</td>
+                                                    </tr>
+                                                    @if (!string.IsNullOrEmpty(education.Profile))
+                                                    {
+                                                        <tr>
+                                                            <th>Профиль:</th>
+                                                            <td>@education.Profile</td>
+                                                        </tr>
+                                                    }
+                                                </table>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <table class="table table-sm table-borderless">
+                                                    <tr>
+                                                        <th>Форма обучения:</th>
+                                                        <td>@education.Form</td>
+                                                    </tr>
+                                                    @if (!string.IsNullOrEmpty(education.Qualification))
+                                                    {
+                                                        <tr>
+                                                            <th>Квалификация:</th>
+                                                            <td>@education.Qualification</td>
+                                                        </tr>
+                                                    }
+                                                    <tr>
+                                                        <th>Группа:</th>
+                                                        <td>@education.Group</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Год начала:</th>
+                                                        <td>@education.StartYear</td>
+                                                    </tr>
+                                                    @if (education.EndYear.HasValue)
+                                                    {
+                                                        <tr>
+                                                            <th>Год окончания:</th>
+                                                            <td>@education.EndYear.Value</td>
+                                                        </tr>
+                                                    }
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <div class="mt-3">
+                                            <div class="mt-3">
+                                                <button class="btn btn-outline-warning btn-sm me-2" @onclick="() => EditEducation(education)">
+                                                    Редактировать
+                                                </button>
+                                                <button class="btn btn-outline-secondary btn-sm me-2" @onclick='() => ChangeEducationStatus(education.Id, "Обучается")'>
+                                                    Обучается
+                                                </button>
+
+                                                <button class="btn btn-outline-primary btn-sm me-2" @onclick='() => ChangeEducationStatus(education.Id, "Завершено")'>
+                                                    Завершено
+                                                </button>
+
+                                                <button class="btn btn-outline-danger btn-sm me-2" @onclick='() => ChangeEducationStatus(education.Id, "Отчислен")'>
+                                                    Отчислен
+                                                </button>
+
+                                                <button class="btn btn-outline-dark btn-sm" @onclick="() => DeleteEducation(education.Id)">
+                                                    Удалить
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="text-center mt-3">
+                        <button class="btn btn-info" @onclick="ToggleEducationForm">
+                            Добавить обучение
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <div class="card">
+                        <div class="card-body text-center text-muted">
+                            <p class="mb-0">Информация об образовании отсутствует</p>
+                            <button class="btn btn-info btn-sm mt-2" @onclick="ToggleEducationForm">
+                                Добавить первое обучение
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+        <div class="card-footer">
+            <button class="btn btn-secondary" @onclick="GoBack">Назад к списку</button>
+            <button class="btn btn-danger ms-2" @onclick="DeleteStudent">Удалить студента</button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private Student? _student;
+    private bool _showEditForm = false;
+    private bool _showEducationForm = false;
+    private bool _showEditEducationForm = false;
+    private string _editFirstName = "";
+    private string _editLastName = "";
+    private string _editPatronymic = "";
+    private string _editStudentCard = "";
+    private string _updateMessage = "";
+    private string _educationMessage = "";
+    private string _educationEditMessage = "";
+
+    // Валидация
+    private bool _firstNameError = false;
+    private bool _lastNameError = false;
+    private bool _studentCardError = false;
+
+    // Модель для нового образования
+    private CreateEducationModel _newEducation = new();
+
+    // Для редактирования образования
+    private Education? _editingEducation;
+    private EditEducationModel _editEducationModel = new();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadStudent();
+    }
+
+    private async Task LoadStudent()
+    {
+        _student = await StudentService.GetStudentByIdAsync(Id);
+        if (_student != null)
+        {
+            _editFirstName = _student.FirstName;
+            _editLastName = _student.LastName;
+            _editPatronymic = _student.Patronymic ?? "";
+            _editStudentCard = _student.StudentCardNumber;
+        }
+        StateHasChanged();
+    }
+
+    private void ToggleEditForm()
+    {
+        _showEditForm = !_showEditForm;
+        _updateMessage = "";
+        ResetValidationErrors();
+
+        if (_showEditForm && _student != null)
+        {
+            _editFirstName = _student.FirstName;
+            _editLastName = _student.LastName;
+            _editPatronymic = _student.Patronymic ?? "";
+            _editStudentCard = _student.StudentCardNumber;
+        }
+    }
+
+    private void ToggleEducationForm()
+    {
+        _showEducationForm = !_showEducationForm;
+        _educationMessage = "";
+        if (!_showEducationForm)
+        {
+            _newEducation = new CreateEducationModel();
+        }
+    }
+
+    private void ResetValidationErrors()
+    {
+        _firstNameError = false;
+        _lastNameError = false;
+        _studentCardError = false;
+    }
+
+    private bool ValidateStudentForm()
+    {
+        ResetValidationErrors();
+
+        var isValid = true;
+
+        if (string.IsNullOrWhiteSpace(_editFirstName))
+        {
+            _firstNameError = true;
+            isValid = false;
+        }
+
+        if (string.IsNullOrWhiteSpace(_editLastName))
+        {
+            _lastNameError = true;
+            isValid = false;
+        }
+
+        if (string.IsNullOrWhiteSpace(_editStudentCard))
+        {
+            _studentCardError = true;
+            isValid = false;
+        }
+
+        StateHasChanged();
+        return isValid;
+    }
+
+    private async Task UpdateStudent()
+    {
+        if (!ValidateStudentForm())
+        {
+            _updateMessage = "Пожалуйста, заполните все обязательные поля";
+            return;
+        }
+
+        var success = await StudentService.UpdateStudentAsync(
+            Id, _editFirstName, _editLastName, _editPatronymic, _editStudentCard);
+
+        if (success)
+        {
+            _updateMessage = "Данные студента успешно обновлены!";
+            _showEditForm = false;
+            await LoadStudent();
+        }
+        else
+        {
+            _updateMessage = "Ошибка при обновлении данных студента";
+        }
+    }
+
+    private async Task AddEducation()
+    {
+        if (string.IsNullOrWhiteSpace(_newEducation.Institution) ||
+            string.IsNullOrWhiteSpace(_newEducation.Faculty) ||
+            string.IsNullOrWhiteSpace(_newEducation.Specialty) ||
+            string.IsNullOrWhiteSpace(_newEducation.Form) ||
+            string.IsNullOrWhiteSpace(_newEducation.Group) ||
+            _newEducation.StartYear == 0)
+        {
+            _educationMessage = "Пожалуйста, заполните все обязательные поля";
+            return;
+        }
+
+        var success = await EducationService.CreateEducationAsync(
+            Id,
+            _newEducation.Institution,
+            _newEducation.Faculty,
+            _newEducation.Specialty,
+            _newEducation.Profile,
+            _newEducation.Form,
+            _newEducation.Qualification,
+            _newEducation.Group,
+            _newEducation.StartYear,
+            _newEducation.EndYear
+        );
+
+        if (success)
+        {
+            _educationMessage = "Образование успешно добавлено!";
+            _showEducationForm = false;
+            _newEducation = new CreateEducationModel();
+            await LoadStudent();
+        }
+        else
+        {
+            _educationMessage = "Ошибка при добавлении образования";
+        }
+    }
+
+    private void EditEducation(Education education)
+    {
+        _editingEducation = education;
+        _showEditEducationForm = true;
+        _educationEditMessage = "";
+
+        _editEducationModel = new EditEducationModel
+        {
+            Institution = education.Institution,
+            Faculty = education.Faculty,
+            Specialty = education.Specialty,
+            Profile = education.Profile ?? "",
+            Form = education.Form,
+            Qualification = education.Qualification ?? "",
+            Group = education.Group,
+            StartYear = education.StartYear,
+            EndYear = education.EndYear
+        };
+
+        StateHasChanged();
+    }
+
+    private async Task UpdateEducation()
+    {
+        if (_editingEducation == null) return;
+
+        if (string.IsNullOrWhiteSpace(_editEducationModel.Institution) ||
+            string.IsNullOrWhiteSpace(_editEducationModel.Faculty) ||
+            string.IsNullOrWhiteSpace(_editEducationModel.Specialty) ||
+            string.IsNullOrWhiteSpace(_editEducationModel.Form) ||
+            string.IsNullOrWhiteSpace(_editEducationModel.Group) ||
+            _editEducationModel.StartYear == 0)
+        {
+            _educationEditMessage = "Пожалуйста, заполните все обязательные поля";
+            return;
+        }
+
+        var success = await EducationService.UpdateEducationAsync(
+            _editingEducation.Id,
+            _editEducationModel.Faculty,
+            _editEducationModel.Specialty,
+            _editEducationModel.Profile,
+            _editEducationModel.Form,
+            _editEducationModel.Qualification,
+            _editEducationModel.Group,
+            _editEducationModel.StartYear,
+            _editEducationModel.EndYear
+        );
+
+        if (success)
+        {
+            _educationEditMessage = "Данные образования успешно обновлены!";
+            _showEditEducationForm = false;
+            _editingEducation = null;
+            await LoadStudent();
+        }
+        else
+        {
+            _educationEditMessage = "Ошибка при обновлении данных образования";
+        }
+    }
+
+    private async Task DeleteEducation(Guid educationId)
+    {
+        if (!await JSRuntime.InvokeAsync<bool>("confirm", "Вы уверены, что хотите удалить это обучение?"))
+        {
+            return;
+        }
+
+        var success = await EducationService.DeleteEducationAsync(educationId);
+
+        if (success)
+        {
+            await LoadStudent(); // Перезагружаем данные студента
+        }
+        else
+        {
+            Console.WriteLine("Ошибка при удалении образования");
+        }
+    }
+
+    private void CancelEditEducation()
+    {
+        _showEditEducationForm = false;
+        _editingEducation = null;
+        _educationEditMessage = "";
+        _editEducationModel = new EditEducationModel();
+        StateHasChanged();
+    }
+
+    private async Task ChangeEducationStatus(Guid educationId, string status)
+    {
+        var success = await EducationService.UpdateEducationStatusAsync(educationId, status);
+        if (success)
+        {
+            await LoadStudent();
+        }
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/students");
+    }
+
+    private async Task DeleteStudent()
+    {
+        var success = await StudentService.DeleteStudentAsync(Id);
+
+        if (success)
+        {
+            Navigation.NavigateTo("/students");
+        }
+    }
+
+    private string GetStatusBadgeClass(string status)
+    {
+        return status switch
+        {
+            "Обучается" => "bg-success",
+            "Завершено" => "bg-primary",
+            "Отчислен" => "bg-danger",
+            "Академический отпуск" => "bg-warning",
+            _ => "bg-secondary"
+        };
+    }
+
+    // Модель для создания образования
+    private class CreateEducationModel
+    {
+        public string Institution { get; set; } = "";
+        public string Faculty { get; set; } = "";
+        public string Specialty { get; set; } = "";
+        public string Profile { get; set; } = "";
+        public string Form { get; set; } = "Очная";
+        public string Qualification { get; set; } = "";
+        public string Group { get; set; } = "";
+        public int StartYear { get; set; } = DateTime.Now.Year;
+        public int? EndYear { get; set; }
+    }
+
+    // Модель для редактирования образования
+    private class EditEducationModel
+    {
+        public string Institution { get; set; } = "";
+        public string Faculty { get; set; } = "";
+        public string Specialty { get; set; } = "";
+        public string Profile { get; set; } = "";
+        public string Form { get; set; } = "";
+        public string Qualification { get; set; } = "";
+        public string Group { get; set; } = "";
+        public int StartYear { get; set; }
+        public int? EndYear { get; set; }
+    }
+}

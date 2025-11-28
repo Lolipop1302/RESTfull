@@ -1,0 +1,190 @@
+﻿@page "/students"
+@using RESTfull.Domain.Entities
+@inject RESTfull.Client.Services.StudentService StudentService
+
+<h3>Список студентов</h3>
+
+<button class="btn btn-primary mb-3" @onclick="ToggleCreateForm">
+    @(_showCreateForm ? "Отмена" : "Добавить студента")
+</button>
+
+@if (_showCreateForm)
+{
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5>Новый студент</h5>
+
+            <div class="mb-2">
+                <label class="form-label">Имя *</label>
+                <input @bind="@_newFirstName" class="form-control @(_firstNameError ? "is-invalid" : "")" placeholder="Имя" />
+                @if (_firstNameError)
+                {
+                    <div class="invalid-feedback">Имя обязательно для заполнения</div>
+                }
+            </div>
+
+            <div class="mb-2">
+                <label class="form-label">Фамилия *</label>
+                <input @bind="@_newLastName" class="form-control @(_lastNameError ? "is-invalid" : "")" placeholder="Фамилия" />
+                @if (_lastNameError)
+                {
+                    <div class="invalid-feedback">Фамилия обязательна для заполнения</div>
+                }
+            </div>
+
+            <div class="mb-2">
+                <label class="form-label">Отчество</label>
+                <input @bind="@_newPatronymic" class="form-control" placeholder="Отчество" />
+            </div>
+
+            <div class="mb-2">
+                <label class="form-label">Номер студ. билета *</label>
+                <input @bind="@_newStudentCard" class="form-control @(_studentCardError ? "is-invalid" : "")" placeholder="Номер студ. билета" />
+                @if (_studentCardError)
+                {
+                    <div class="invalid-feedback">Номер студенческого билета обязателен для заполнения</div>
+                }
+            </div>
+
+            <button class="btn btn-success" @onclick="CreateStudent">Создать</button>
+        </div>
+    </div>
+}
+
+@if (_students == null)
+{
+    <p>Загрузка...</p>
+}
+else if (!_students.Any())
+{
+    <p>Нет студентов</p>
+}
+else
+{
+    <div class="row">
+        @foreach (var student in _students)
+        {
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">@student.LastName @student.FirstName @student.Patronymic</h5>
+                        <p class="card-text">
+                            <strong>ID:</strong> @student.Id<br>
+                            <strong>Имя:</strong> @student.FirstName<br>
+                            <strong>Фамилия:</strong> @student.LastName<br>
+                            <strong>Отчество:</strong> @student.Patronymic<br>
+                            <strong>Студ. билет:</strong> @student.StudentCardNumber<br>
+                            <strong>Дата регистрации:</strong> @student.RegistrationDate.ToString("dd.MM.yyyy")
+                        </p>
+                        <div class="btn-group" role="group">
+                            <a href="/student/@student.Id" class="btn btn-info btn-sm">Просмотр</a>
+                            <button class="btn btn-danger btn-sm" @onclick="() => DeleteStudent(student.Id)">
+                                Удалить
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<Student> _students = new();
+    private bool _showCreateForm = false;
+    private string _newFirstName = "";
+    private string _newLastName = "";
+    private string _newPatronymic = "";
+    private string _newStudentCard = "";
+
+    // Переменные для ошибок валидации
+    private bool _firstNameError = false;
+    private bool _lastNameError = false;
+    private bool _studentCardError = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadStudents();
+    }
+
+    private async Task LoadStudents()
+    {
+        _students = await StudentService.GetStudentsAsync();
+        StateHasChanged();
+    }
+
+    private void ToggleCreateForm()
+    {
+        _showCreateForm = !_showCreateForm;
+        // Сброс ошибок при открытии/закрытии формы
+        ResetValidationErrors();
+    }
+
+    private void ResetValidationErrors()
+    {
+        _firstNameError = false;
+        _lastNameError = false;
+        _studentCardError = false;
+    }
+
+    private bool ValidateForm()
+    {
+        ResetValidationErrors();
+
+        var isValid = true;
+
+        if (string.IsNullOrWhiteSpace(_newFirstName))
+        {
+            _firstNameError = true;
+            isValid = false;
+        }
+
+        if (string.IsNullOrWhiteSpace(_newLastName))
+        {
+            _lastNameError = true;
+            isValid = false;
+        }
+
+        if (string.IsNullOrWhiteSpace(_newStudentCard))
+        {
+            _studentCardError = true;
+            isValid = false;
+        }
+
+        StateHasChanged();
+        return isValid;
+    }
+
+    private async Task CreateStudent()
+    {
+        // Проверяем валидацию
+        if (!ValidateForm())
+        {
+            return;
+        }
+
+        var success = await StudentService.CreateStudentAsync(
+            _newFirstName, _newLastName, _newPatronymic, _newStudentCard);
+
+        if (success)
+        {
+            // Сброс формы
+            _newFirstName = _newLastName = _newPatronymic = _newStudentCard = "";
+            _showCreateForm = false;
+            ResetValidationErrors();
+
+            // Обновление списка
+            await LoadStudents();
+        }
+    }
+
+    private async Task DeleteStudent(Guid studentId)
+    {
+        var success = await StudentService.DeleteStudentAsync(studentId);
+
+        if (success)
+        {
+            await LoadStudents();
+        }
+    }
+}
