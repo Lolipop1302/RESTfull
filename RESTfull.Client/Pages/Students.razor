@@ -116,7 +116,6 @@ else
     private void ToggleCreateForm()
     {
         _showCreateForm = !_showCreateForm;
-        // Сброс ошибок при открытии/закрытии формы
         ResetValidationErrors();
     }
 
@@ -157,7 +156,6 @@ else
 
     private async Task CreateStudent()
     {
-        // Проверяем валидацию
         if (!ValidateForm())
         {
             return;
@@ -168,7 +166,6 @@ else
 
         if (success)
         {
-            // Сброс формы
             _newFirstName = _newLastName = _newPatronymic = _newStudentCard = "";
             _showCreateForm = false;
             ResetValidationErrors();
