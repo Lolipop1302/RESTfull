@@ -10,13 +10,11 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-// Регистрация HttpClient для подключения к API
 builder.Services.AddScoped(sp => new HttpClient
 {
-    BaseAddress = new Uri("http://localhost:7170") // Устанавливаем BaseAddress здесь
+    BaseAddress = new Uri("http://localhost:7170")
 });
 
-// Регистрация сервисов (УБЕРИТЕ ДУБЛИРОВАНИЕ)
 builder.Services.AddScoped<StudentService>();
 builder.Services.AddScoped<EducationService>();
 
