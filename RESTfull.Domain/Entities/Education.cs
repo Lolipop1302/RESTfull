@@ -33,7 +33,6 @@
 
         public Guid StudentId { get; set; }
 
-        // УБЕДИТЕСЬ ЧТО ЭТО ВИРТУАЛЬНОЕ
         public virtual Student Student { get; set; } = null!;
 
         public void UpdateAcademicInfo(string faculty, string specialty, string profile, string qualification, string group)
