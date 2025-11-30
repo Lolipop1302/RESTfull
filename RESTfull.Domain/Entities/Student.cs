@@ -25,7 +25,6 @@
         public string StudentCardNumber { get; set; } = string.Empty;
         public DateTime RegistrationDate { get; set; }
 
-        // ИЗМЕНИТЕ ЭТО - уберите приватную коллекцию
         public virtual ICollection<Education> Educations { get; set; }
 
         public void UpdatePersonalInfo(string firstName, string lastName, string patronymic)
