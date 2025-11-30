@@ -76,11 +76,10 @@ namespace RESTfull.API.Controllers
         [HttpPost]
         public async Task<ActionResult<object>> CreateStudent(CreateStudentDto request)
         {
-            // Проверяем уникальность номера студенческого
             var existingStudent = await _studentRepository.GetByStudentCardAsync(request.StudentCardNumber);
             if (existingStudent != null)
             {
-                return BadRequest("Студент с таким номером студенческого уже существует");
+                return BadRequest("Г‘ГІГіГ¤ГҐГ­ГІ Г± ГІГ ГЄГЁГ¬ Г­Г®Г¬ГҐГ°Г®Г¬ Г±ГІГіГ¤ГҐГ­Г·ГҐГ±ГЄГ®ГЈГ® ГіГ¦ГҐ Г±ГіГ№ГҐГ±ГІГўГіГҐГІ");
             }
 
             var student = new Student(
@@ -140,11 +139,10 @@ namespace RESTfull.API.Controllers
                 return NotFound();
             }
 
-            // Проверяем уникальность нового номера студенческого
             var existingStudent = await _studentRepository.GetByStudentCardAsync(request.StudentCardNumber);
             if (existingStudent != null && existingStudent.Id != id)
             {
-                return BadRequest("Студент с таким номером студенческого уже существует");
+                return BadRequest("Г‘ГІГіГ¤ГҐГ­ГІ Г± ГІГ ГЄГЁГ¬ Г­Г®Г¬ГҐГ°Г®Г¬ Г±ГІГіГ¤ГҐГ­Г·ГҐГ±ГЄГ®ГЈГ® ГіГ¦ГҐ Г±ГіГ№ГҐГ±ГІГўГіГҐГІ");
             }
 
             student.UpdateStudentCard(request.StudentCardNumber);
