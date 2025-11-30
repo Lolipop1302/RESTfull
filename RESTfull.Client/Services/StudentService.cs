@@ -107,7 +107,6 @@ namespace RESTfull.Client.Services
                     return false;
                 }
 
-                // Обновляем номер студенческого билета
                 var studentCardResponse = await _http.PutAsJsonAsync($"api/students/{id}/student-card", new
                 {
                     studentCardNumber
