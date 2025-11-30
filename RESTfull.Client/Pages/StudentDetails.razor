@@ -27,7 +27,6 @@ else
         </div>
 
         <div class="card-body">
-            <!-- Форма редактирования студента -->
             @if (_showEditForm)
             {
                 <div class="card mb-4">
@@ -84,7 +83,6 @@ else
                 </div>
             }
 
-            <!-- Форма добавления обучения -->
             @if (_showEducationForm)
             {
                 <div class="card mb-4">
@@ -135,7 +133,6 @@ else
                                     <input @bind="@_newEducation.Group" class="form-control" />
                                 </div>
 
-                                <!-- ДОБАВЬТЕ ЭТОТ БЛОК С ГОДАМИ -->
                                 <div class="row">
                                     <div class="col-6">
                                         <div class="mb-2">
@@ -166,7 +163,6 @@ else
                 </div>
             }
 
-            <!-- Форма редактирования образования -->
             @if (_showEditEducationForm && _editingEducation != null)
             {
                 <div class="card mb-4">
@@ -250,7 +246,6 @@ else
                 </div>
             }
 
-            <!-- Основная информация студента -->
             <div class="mb-4">
                 <h5>Основная информация</h5>
                 <div class="card">
@@ -293,7 +288,6 @@ else
                 </div>
             </div>
 
-            <!-- Образование -->
             <div>
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="mb-0">Образование</h5>
@@ -435,15 +429,12 @@ else
     private string _educationMessage = "";
     private string _educationEditMessage = "";
 
-    // Валидация
     private bool _firstNameError = false;
     private bool _lastNameError = false;
     private bool _studentCardError = false;
 
-    // Модель для нового образования
     private CreateEducationModel _newEducation = new();
 
-    // Для редактирования образования
     private Education? _editingEducation;
     private EditEducationModel _editEducationModel = new();
 
@@ -713,7 +704,6 @@ else
         };
     }
 
-    // Модель для создания образования
     private class CreateEducationModel
     {
         public string Institution { get; set; } = "";
@@ -727,7 +717,6 @@ else
         public int? EndYear { get; set; }
     }
 
-    // Модель для редактирования образования
     private class EditEducationModel
     {
         public string Institution { get; set; } = "";
